@@ -10,10 +10,12 @@ use App\Application\FileSystem\ListChildren;
 use App\Domain\FileSystem\Dto\NodeData;
 use App\Domain\FileSystem\Exception\NodeNotFound;
 use App\Domain\FileSystem\Repository\NodeRepository;
+use App\Domain\FileSystem\ValueObject\NodeName;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateNodeRequest;
 use App\Http\Requests\ListChildrenRequest;
 use App\Http\Resources\NodeResource;
+use Dedoc\Scramble\Attributes\Response as DocumentedResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
@@ -53,6 +55,12 @@ final class NodeController extends Controller
         ]);
     }
 
+    #[DocumentedResponse(
+        422,
+        description: '$0 Also returned when the name fails a NodeName business rule — blank, over '
+            .NodeName::MAX_LENGTH.' characters, containing "/", or containing a control character — '
+            .'which shape validation alone cannot catch.',
+    )]
     public function store(CreateNodeRequest $request): JsonResponse
     {
         $node = $this->createNode->execute($request->parentId(), $request->type(), $request->nodeName());
