@@ -1,0 +1,49 @@
+# Runs the production image locally against a real Postgres instance, the
+# same shape as the Railway deployment (one app container, one managed
+# database). Not part of local development — see docker-compose.yml for that.
+#
+#   docker compose -f docker-compose.prod.yml up --build -d
+#   docker compose -f docker-compose.prod.yml run --rm app php artisan migrate --force
+#   curl -f http://localhost:8080/api/v1/health
+
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      APP_NAME: "File System"
+      APP_ENV: production
+      APP_KEY: ${APP_KEY:?set APP_KEY, e.g. via php artisan key:generate --show}
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:${PORT:-8080}
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB:-app}
+      DB_USERNAME: ${POSTGRES_USER:-app}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    volumes:
+      - prod_db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-app}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  prod_db_data:
