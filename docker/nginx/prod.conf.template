@@ -1,0 +1,33 @@
+server {
+    listen __PORT__;
+    server_name _;
+
+    client_max_body_size 20m;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json;
+
+    root /var/www/html/web/dist;
+    index index.html;
+
+    location /api/ {
+        alias /var/www/html/api/public/;
+        try_files $uri @api;
+    }
+
+    # Laravel has a single entry point; every non-static /api/ request runs
+    # public/index.php, which reads the real path from REQUEST_URI.
+    location @api {
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/html/api/public/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+    }
+
+    # The SPA owns routing for everything else; an unmatched path is a
+    # deep link, not a 404, so it falls back to index.html.
+    location / {
+        try_files $uri /index.html;
+    }
+}
