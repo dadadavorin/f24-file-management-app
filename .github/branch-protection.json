@@ -1,5 +1,5 @@
 {
-  "required_status_checks": { "strict": true, "contexts": ["backend", "frontend"] },
+  "required_status_checks": { "strict": true, "contexts": ["backend", "frontend", "e2e"] },
   "enforce_admins": false,
   "required_pull_request_reviews": null,
   "restrictions": null,
