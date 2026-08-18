@@ -1,11 +1,18 @@
 import { useParams } from "react-router-dom";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { FolderView } from "./FolderView";
 
 export function FolderPage() {
   const { id } = useParams<{ id: string }>();
+  const folderId = Number(id);
 
-  return (
-    <div className="p-6">
-      <p className="text-sm text-muted-foreground">Folder {id}</p>
-    </div>
-  );
+  if (!id || !Number.isInteger(folderId) || folderId < 1) {
+    return (
+      <div className="p-6">
+        <EmptyState title="Folder not found" description="That folder id isn't valid." />
+      </div>
+    );
+  }
+
+  return <FolderView folderId={folderId} />;
 }
