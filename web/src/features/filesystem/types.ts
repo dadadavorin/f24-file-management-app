@@ -15,3 +15,9 @@ export interface NodeSummary {
   created_at: string;
   updated_at: string;
 }
+
+export type SearchScope = "subtree" | "all";
+
+export interface FileSearchResult extends NodeSummary {
+  folder: NodeSummary | null;
+}
