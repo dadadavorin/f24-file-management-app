@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { useChildren } from "../hooks/useChildren";
+import { useNode } from "../hooks/useNode";
 import { client } from "../../../api/client";
 import type { NodeSummary } from "../types";
 
@@ -99,6 +100,36 @@ describe("DeleteConfirmDialog", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 
     expect(deleteMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("excludes the deleted node's own queries from invalidation, the way FolderView subscribes to them when you delete the folder you're inside", async () => {
+    const user = userEvent.setup();
+    deleteMock.mockResolvedValue(undefined);
+    const onDeleted = vi.fn();
+
+    function DeletedNodeHarness() {
+      useNode(invoicesFolder.id);
+      useChildren(invoicesFolder.id);
+      return <DeleteConfirmDialog node={invoicesFolder} onDeleted={onDeleted} trigger={<button>Delete row</button>} />;
+    }
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DeletedNodeHarness />
+      </QueryClientProvider>,
+    );
+
+    const ownUrl = `/nodes/${invoicesFolder.id}`;
+    await waitFor(() => expect(getMock).toHaveBeenCalledWith(ownUrl));
+    const callsBeforeDelete = getMock.mock.calls.filter(([url]) => url === ownUrl).length;
+
+    await user.click(screen.getByRole("button", { name: "Delete row" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(onDeleted).toHaveBeenCalled());
+
+    const callsAfterDelete = getMock.mock.calls.filter(([url]) => url === ownUrl).length;
+    expect(callsAfterDelete).toBe(callsBeforeDelete);
   });
 
   it("closes on Escape and returns focus to the trigger", async () => {
