@@ -34,3 +34,17 @@ test('a lone percent sign matches nothing and does not error', function () {
 
     $response->assertOk()->assertExactJson(['data' => []]);
 });
+
+test('suggestions can be scoped to a subtree', function () {
+    $root = repository()->findRoot();
+    $a = repository()->create($root->id, NodeType::Folder, NodeName::fromString('A'), NodePath::forChild($root->path, $root->id));
+    $b = repository()->create($root->id, NodeType::Folder, NodeName::fromString('B'), NodePath::forChild($root->path, $root->id));
+    repository()->create($a->id, NodeType::File, NodeName::fromString('invoice-a.pdf'), NodePath::forChild($a->path, $a->id));
+    repository()->create($b->id, NodeType::File, NodeName::fromString('invoice-b.pdf'), NodePath::forChild($b->path, $b->id));
+
+    $response = $this->getJson("/api/v1/search/suggestions?q=invoice&scope=subtree&parent_id={$a->id}");
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.name', 'invoice-a.pdf');
+});
