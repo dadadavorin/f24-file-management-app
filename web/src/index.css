@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Every ui/ primitive is styled from these — a future palette
+ * change happens here, not by editing components one by one.
+ */
+@theme {
+  --color-background: oklch(100% 0 0);
+  --color-foreground: oklch(20% 0.02 260);
+
+  --color-muted: oklch(96% 0.005 260);
+  --color-muted-foreground: oklch(50% 0.02 260);
+
+  --color-border: oklch(90% 0.01 260);
+  --color-ring: oklch(60% 0.15 260);
+
+  --color-primary: oklch(45% 0.18 260);
+  --color-primary-foreground: oklch(98% 0 0);
+
+  --color-secondary: oklch(94% 0.01 260);
+  --color-secondary-foreground: oklch(25% 0.02 260);
+
+  --color-destructive: oklch(55% 0.22 25);
+  --color-destructive-foreground: oklch(98% 0 0);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
