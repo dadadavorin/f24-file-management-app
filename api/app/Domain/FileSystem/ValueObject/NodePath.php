@@ -39,6 +39,15 @@ final readonly class NodePath
         return new self('/', 0);
     }
 
+    /**
+     * Reconstructs a path already persisted. Skips the depth check forChild()
+     * performs on write, because a stored path was already validated then.
+     */
+    public static function fromStored(string $value, int $depth): self
+    {
+        return new self($value, $depth);
+    }
+
     public static function forChild(self $parentPath, int $parentId): self
     {
         $depth = $parentPath->depth + 1;
