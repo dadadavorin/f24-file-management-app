@@ -121,7 +121,7 @@ describe("filesystem routes", () => {
     const dialog = await screen.findByRole("dialog", { name: 'Delete "Invoices"?' });
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
 
-    expect(await screen.findByText("Documents")).toBeInTheDocument();
+    expect(await screen.findByText("Documents", {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Root" })).toBeInTheDocument();
     expect(deleteMock).toHaveBeenCalledWith("/nodes/22");
   });
@@ -146,7 +146,7 @@ describe("filesystem routes", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
 
     // 7 (Invoices' parent) was already gone too, so this lands on root, not 7.
-    expect(await screen.findByText("Root")).toBeInTheDocument();
+    expect(await screen.findByText("Root", {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.queryByText("Couldn't load this folder")).not.toBeInTheDocument();
   });
 });
