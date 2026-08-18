@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "../../../lib/cn";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import type { NodeSummary } from "../types";
 
 const ROW_CLASSES = "flex items-center gap-3 px-4 py-3 text-sm";
@@ -28,6 +29,18 @@ function FileIcon() {
   );
 }
 
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        d="M8.75 1a.75.75 0 0 0-.75.75V3H4.5a.75.75 0 0 0 0 1.5h.35l.7 10.15A2 2 0 0 0 7.54 16.5h4.92a2 2 0 0 0 1.99-1.85l.7-10.15h.35a.75.75 0 0 0 0-1.5h-3.5V1.75a.75.75 0 0 0-.75-.75h-2.5ZM8.5 6.75a.75.75 0 0 1 1.5 0v6.5a.75.75 0 0 1-1.5 0v-6.5Zm3.25-.75a.75.75 0 0 0-.75.75v6.5a.75.75 0 0 0 1.5 0v-6.5a.75.75 0 0 0-.75-.75Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
 export interface NodeRowProps {
   node: NodeSummary;
 }
@@ -45,13 +58,27 @@ export function NodeRow({ node }: NodeRowProps) {
     </>
   );
 
-  if (!isFolder) {
-    return <div className={ROW_CLASSES}>{content}</div>;
-  }
-
   return (
-    <Link to={`/folders/${node.id}`} className={cn(ROW_CLASSES, "hover:bg-muted")}>
-      {content}
-    </Link>
+    <div className={cn(ROW_CLASSES, "justify-between gap-2")}>
+      {isFolder ? (
+        <Link to={`/folders/${node.id}`} className="flex min-w-0 flex-1 items-center gap-3 hover:underline">
+          {content}
+        </Link>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3">{content}</div>
+      )}
+      <DeleteConfirmDialog
+        node={node}
+        trigger={
+          <button
+            type="button"
+            aria-label={`Delete ${node.name}`}
+            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+          >
+            <TrashIcon />
+          </button>
+        }
+      />
+    </div>
   );
 }
