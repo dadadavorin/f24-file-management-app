@@ -43,9 +43,10 @@ function TrashIcon() {
 
 export interface NodeRowProps {
   node: NodeSummary;
+  highlighted?: boolean;
 }
 
-export function NodeRow({ node }: NodeRowProps) {
+export function NodeRow({ node, highlighted = false }: NodeRowProps) {
   const isFolder = node.type === "folder";
 
   const content = (
@@ -59,7 +60,10 @@ export function NodeRow({ node }: NodeRowProps) {
   );
 
   return (
-    <div className={cn(ROW_CLASSES, "justify-between gap-2")}>
+    <div
+      id={`node-row-${node.id}`}
+      className={cn(ROW_CLASSES, "justify-between gap-2", highlighted && "bg-primary/10 ring-2 ring-inset ring-primary/60")}
+    >
       {isFolder ? (
         <Link to={`/folders/${node.id}`} className="flex min-w-0 flex-1 items-center gap-3 hover:underline">
           {content}

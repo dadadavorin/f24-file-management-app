@@ -11,6 +11,7 @@ import { Breadcrumbs } from "./Breadcrumbs";
 import { CreateNodeDialog } from "./CreateNodeDialog";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { NodeRow } from "./NodeRow";
+import { SearchBox } from "./SearchBox";
 
 export interface FolderViewProps {
   folderId: number;
@@ -20,9 +21,11 @@ export interface FolderViewProps {
    * view, whose own parent may since have been removed too.
    */
   fallbackChain?: number[];
+  /** A node id to highlight — set when arriving here from a search result. */
+  highlightId?: number;
 }
 
-export function FolderView({ folderId, fallbackChain = [] }: FolderViewProps) {
+export function FolderView({ folderId, fallbackChain = [], highlightId }: FolderViewProps) {
   const navigate = useNavigate();
   const node = useNode(folderId);
   const children = useChildren(folderId);
@@ -67,6 +70,13 @@ export function FolderView({ folderId, fallbackChain = [] }: FolderViewProps) {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [hasNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    if (highlightId === undefined) {
+      return;
+    }
+    document.getElementById(`node-row-${highlightId}`)?.scrollIntoView({ block: "center" });
+  }, [highlightId, items]);
 
   if (node.isPending || children.isPending) {
     return (
@@ -150,6 +160,10 @@ export function FolderView({ folderId, fallbackChain = [] }: FolderViewProps) {
         </div>
       </div>
 
+      <div className="mt-4">
+        <SearchBox parentId={folderId} />
+      </div>
+
       {items.length === 0 ? (
         <EmptyState
           className="mt-6"
@@ -160,7 +174,7 @@ export function FolderView({ folderId, fallbackChain = [] }: FolderViewProps) {
         <ul className="mt-6 flex flex-col divide-y divide-border rounded-lg border border-border">
           {items.map((item) => (
             <li key={item.id}>
-              <NodeRow node={item} />
+              <NodeRow node={item} highlighted={item.id === highlightId} />
             </li>
           ))}
         </ul>

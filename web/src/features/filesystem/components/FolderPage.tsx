@@ -4,6 +4,7 @@ import { FolderView } from "./FolderView";
 
 interface FolderPageState {
   fallbackChain?: number[];
+  highlightId?: number;
 }
 
 export function FolderPage() {
@@ -19,7 +20,7 @@ export function FolderPage() {
     );
   }
 
-  const fallbackChain = (location.state as FolderPageState | null)?.fallbackChain;
+  const state = location.state as FolderPageState | null;
 
-  return <FolderView folderId={folderId} fallbackChain={fallbackChain} />;
+  return <FolderView folderId={folderId} fallbackChain={state?.fallbackChain} highlightId={state?.highlightId} />;
 }
