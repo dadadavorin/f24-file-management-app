@@ -9,6 +9,9 @@ use App\Domain\FileSystem\Enum\NodeType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin NodeData
+ */
 final class NodeResource extends JsonResource
 {
     public function __construct(
@@ -28,6 +31,8 @@ final class NodeResource extends JsonResource
             'parent_id' => $this->node->parentId,
             'type' => $this->node->type->value,
             'name' => $this->node->name,
+            // Scramble can't see past when() here and documents this as always
+            // null; the real type is int|null — don't trust the generated one.
             'child_count' => $this->when($this->node->type === NodeType::Folder, $this->childCount),
             'created_at' => $this->node->createdAt->format(DATE_ATOM),
             'updated_at' => $this->node->updatedAt->format(DATE_ATOM),
