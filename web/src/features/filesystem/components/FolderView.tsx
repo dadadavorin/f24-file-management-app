@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { isApiError } from "../../../api/client";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { Skeleton } from "../../../components/ui/Skeleton";
@@ -6,16 +8,43 @@ import { Spinner } from "../../../components/ui/Spinner";
 import { useChildren } from "../hooks/useChildren";
 import { useNode } from "../hooks/useNode";
 import { Breadcrumbs } from "./Breadcrumbs";
+import { CreateNodeDialog } from "./CreateNodeDialog";
+import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { NodeRow } from "./NodeRow";
 
 export interface FolderViewProps {
   folderId: number;
+  /**
+   * Ancestor ids, nearest first, to try in turn if `folderId` turns out to be
+   * gone — set when arriving here after deleting the folder previously in
+   * view, whose own parent may since have been removed too.
+   */
+  fallbackChain?: number[];
 }
 
-export function FolderView({ folderId }: FolderViewProps) {
+export function FolderView({ folderId, fallbackChain = [] }: FolderViewProps) {
+  const navigate = useNavigate();
   const node = useNode(folderId);
   const children = useChildren(folderId);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!node.isError || fallbackChain.length === 0 || !isApiError(node.error, "NODE_NOT_FOUND")) {
+      return;
+    }
+
+    const [next, ...rest] = fallbackChain;
+    navigate(`/folders/${next}`, { replace: true, state: { fallbackChain: rest } });
+  }, [node.isError, node.error, fallbackChain, navigate]);
+
+  function navigateToNearestSurvivingAncestor() {
+    if (!node.data) {
+      return;
+    }
+    const chain = [...node.data.breadcrumbs].reverse().map((ancestor) => ancestor.id);
+    const [next, ...rest] = chain;
+    navigate(`/folders/${next}`, { replace: true, state: { fallbackChain: rest } });
+  }
 
   const items = useMemo(() => children.data?.pages.flatMap((page) => page.data) ?? [], [children.data]);
 
@@ -52,6 +81,14 @@ export function FolderView({ folderId }: FolderViewProps) {
     );
   }
 
+  if (node.isError && fallbackChain.length > 0 && isApiError(node.error, "NODE_NOT_FOUND")) {
+    return (
+      <div className="flex justify-center p-6">
+        <Spinner size="lg" label="Loading" />
+      </div>
+    );
+  }
+
   if (node.isError || children.isError) {
     return (
       <div className="p-6">
@@ -73,9 +110,45 @@ export function FolderView({ folderId }: FolderViewProps) {
     );
   }
 
+  const isRoot = node.data.data.parent_id === null;
+
   return (
     <div className="p-6">
-      <Breadcrumbs breadcrumbs={node.data.breadcrumbs} current={node.data.data} />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <Breadcrumbs breadcrumbs={node.data.breadcrumbs} current={node.data.data} />
+
+        <div className="flex shrink-0 items-center gap-2">
+          <CreateNodeDialog
+            parentId={folderId}
+            type="folder"
+            trigger={
+              <Button variant="secondary" size="sm">
+                New folder
+              </Button>
+            }
+          />
+          <CreateNodeDialog
+            parentId={folderId}
+            type="file"
+            trigger={
+              <Button variant="secondary" size="sm">
+                New file
+              </Button>
+            }
+          />
+          {!isRoot && (
+            <DeleteConfirmDialog
+              node={node.data.data}
+              onDeleted={navigateToNearestSurvivingAncestor}
+              trigger={
+                <Button variant="destructive" size="sm">
+                  Delete this folder
+                </Button>
+              }
+            />
+          )}
+        </div>
+      </div>
 
       {items.length === 0 ? (
         <EmptyState

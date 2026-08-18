@@ -4,10 +4,12 @@
  * as `unknown[]` (Scramble can't infer a paginated resource collection).
  * This is the real shape both endpoints send — see NodeResource::toArray.
  */
+export type NodeType = "folder" | "file";
+
 export interface NodeSummary {
   id: number;
   parent_id: number | null;
-  type: "folder" | "file";
+  type: NodeType;
   name: string;
   child_count: number | null;
   created_at: string;
