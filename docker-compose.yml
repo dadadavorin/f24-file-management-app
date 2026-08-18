@@ -5,10 +5,10 @@ services:
       - "${NGINX_PORT:-8080}:80"
     volumes:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./docker/nginx/web-placeholder:/var/www/html/web-placeholder:ro
       - ./api/public:/var/www/html/api/public:ro
     depends_on:
       - app
+      - web
 
   app:
     build:
@@ -49,8 +49,7 @@ services:
       - ./web:/app
     ports:
       - "${VITE_PORT:-5173}:5173"
-    # web/ doesn't exist until T10; idle rather than crash-loop until it does.
-    command: sh -c "[ -f package.json ] && npm install && npm run dev -- --host || sleep infinity"
+    command: sh -c "npm install && npm run dev -- --host"
 
 volumes:
   db_data:
