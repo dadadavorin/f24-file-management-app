@@ -49,6 +49,13 @@ test('the root path has no ancestors', function () {
     expect(NodePath::forRoot()->ancestorIds())->toBe([]);
 });
 
+test('a stored path reconstructs without re-running the depth check', function () {
+    $path = NodePath::fromStored('/1/7/22/', 3);
+
+    expect($path->value)->toBe('/1/7/22/')
+        ->and($path->depth)->toBe(3);
+});
+
 test('building a child past the maximum depth throws', function () {
     $path = NodePath::forRoot();
 
