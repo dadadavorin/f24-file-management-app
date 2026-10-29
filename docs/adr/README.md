@@ -12,7 +12,7 @@ Five decisions, each with the alternatives that were considered and rejected.
 
 Decisions **not** given an ADR, because they were conventional rather than
 contested: Laravel as the framework, React + Vite on the frontend, Docker
-Compose for local development, and Railway for the demo deployment. Each is
+Compose for local development, and a single-container demo deployment. Each is
 explained in the README where it is relevant to running the project.
 
 ADR-0002 supersedes an earlier draft of the index design that used

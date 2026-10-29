@@ -16,14 +16,14 @@ Decisions and their rejected alternatives live in [`docs/adr/`](adr/README.md).
 | Uniqueness | Database unique index, no check-then-insert | [0005](adr/0005-uniqueness-under-concurrency.md) |
 | Frontend | Vite + React 19 + TS, TanStack Query, Tailwind v4, Radix | *conventional — see README* |
 | Local dev | Docker Compose: nginx + php-fpm + postgres + vite | *conventional — see README* |
-| Deployment | Railway, single origin | *conventional — see README* |
+| Deployment | One container, single origin | *conventional — see README* |
 | Tests | Pest 4, Vitest + RTL, Playwright | — |
 
 ## 2. System topology
 
 ```
 ┌──────────────────────┐               ┌─────────────────────────────────────┐
-│  Browser             │               │  Single origin (Railway)            │
+│  Browser             │               │  Single origin (one container)      │
 │                      │               │                                     │
 │  React SPA           │  GET /        │  ┌───────────────────────────────┐  │
 │  - TanStack Query    │──────────────>│  │ nginx                         │  │
