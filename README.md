@@ -297,6 +297,14 @@ than the form request owns every name rule, is in
 | `web/**/*.test.tsx` | `npm run test` (inside `web/`) | Components, hooks, error and empty states |
 | `e2e/` | `npm run test:e2e` (inside `web/`, stack running) | Two full journeys against the real stack |
 
+The frontend suites run on **Node 20**, as `.nvmrc` records — the Compose stack
+and the pipeline both use it. On newer Node the component tests pass but the
+router tests fail: those exercise a client-side navigation, whose request
+carries a jsdom `AbortSignal` that Node's own `fetch` implementation rejects as
+foreign. That is a disagreement between the test environment and the runtime,
+not a defect in the application — the same journeys pass end to end against the
+real stack.
+
 Three tests are never skipped or deleted, because each guards a failure mode
 that is otherwise silent — no error, just plausible-looking wrong behavior:
 
