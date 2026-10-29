@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-# Railway's pre-deploy command (migrations) runs this same image with an
-# overridden command; when one is given, run it instead of serving.
+# The release step (migrations) runs this same image with an overridden
+# command; when one is given, run it instead of serving.
 if [ "$#" -gt 0 ]; then
     exec "$@"
 fi

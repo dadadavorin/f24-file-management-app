@@ -1,6 +1,6 @@
 # Runs the production image locally against a real Postgres instance, the
-# same shape as the Railway deployment (one app container, one managed
-# database). Not part of local development — see docker-compose.yml for that.
+# same shape as the deployed stack (one app container, one managed database).
+# Not part of local development — see docker-compose.yml for that.
 #
 #   docker compose -f docker-compose.prod.yml up --build -d
 #   docker compose -f docker-compose.prod.yml run --rm app php artisan migrate --force

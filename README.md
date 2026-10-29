@@ -10,7 +10,7 @@ A single-page app backed by a REST API. One tree, rooted at a single node
 everything else descends from. A file is only a name — no content, no size,
 no upload.
 
-**Live demo:** https://f24-file-management-app-production.up.railway.app/
+**Live demo:** https://files.digitalage.hr/
 
 ## 2. Quick start
 
@@ -58,7 +58,7 @@ step through a request without rebuilding the container.
 
 ```
 ┌──────────────────────┐               ┌─────────────────────────────────────┐
-│  Browser             │               │  Single origin (Railway)            │
+│  Browser             │               │  Single origin (one container)      │
 │                      │               │                                     │
 │  React SPA           │  GET /        │  ┌───────────────────────────────┐  │
 │  - TanStack Query    │──────────────>│  │ nginx                         │  │
@@ -215,7 +215,7 @@ mechanism, is written up in [ADR-0002](docs/adr/0002-postgres-collation-and-inde
 | **PostgreSQL 18** | Partial indexes and expression indexes are what makes the prefix-search and single-root constraints possible at all — MySQL doesn't support either. See [ADR-0002](docs/adr/0002-postgres-collation-and-indexes.md) for the full comparison, including why SQLite was ruled out (single-writer locking makes the concurrency behavior in [ADR-0005](docs/adr/0005-uniqueness-under-concurrency.md) impossible to demonstrate). |
 | **React + Vite + TypeScript** | A folder browser is a tree of interactive, independently-loading views — exactly React's shape — and Vite's dev server plus HMR keeps the feedback loop short. TypeScript end to end, with types generated from the OpenAPI contract, means the frontend cannot silently drift from what the API actually returns. |
 | **Docker Compose (local)** | `docker compose up` on a clean clone is the whole setup story: nginx, php-fpm, Postgres, and the Vite dev server, wired together with no host-machine PHP or Node version to match. |
-| **Railway (deployment)** | Builds the same multi-stage `Dockerfile` used to verify the production image locally, runs it as one service alongside a managed Postgres instance, and runs migrations as a pre-deploy step — so "works locally" and "works deployed" are the same artifact, not two configurations that can diverge. |
+| **Container host (deployment)** | The deployed artifact is the same multi-stage `Dockerfile` used to verify the production image locally, run as one container alongside a managed Postgres instance — so "works locally" and "works deployed" are the same artifact, not two configurations that can diverge. Nothing in the image is host-specific; see [§12](#12-deployment). |
 
 ## 8. Frontend dependencies
 
@@ -230,7 +230,7 @@ mechanism, is written up in [ADR-0002](docs/adr/0002-postgres-collation-and-inde
 
 Base path `/api/v1`. The full contract — every request and response shape,
 generated from the Laravel controllers and API resources rather than
-hand-written — is served at [`/docs/api`](https://f24-file-management-app-production.up.railway.app/docs/api)
+hand-written — is served at [`/docs/api`](https://files.digitalage.hr/docs/api)
 and committed as [`openapi.json`](openapi.json).
 
 | Method | Path | Purpose |
@@ -321,11 +321,10 @@ that is otherwise silent — no error, just plausible-looking wrong behavior:
 
 ## 12. Deployment
 
-The live demo runs on [Railway](https://railway.app): one Docker service built
-from the repository's `Dockerfile`, alongside a managed PostgreSQL instance.
-`railway.json` runs `php artisan migrate --force` as a pre-deploy step, so a
-deploy and its migrations are one release, not two steps that can fall out of
-sync — and points Railway's health check at `/api/v1/health`.
+The live demo runs on a VPS, as one container built from the repository's
+`Dockerfile` alongside a PostgreSQL 18 instance on a private network. Nothing
+in the image is tied to that host: it reads its configuration from the
+environment and serves on `$PORT` (default 8080).
 
 The `Dockerfile` is a three-stage build: the frontend is built with Vite,
 composer dependencies are installed without dev packages, and the final image
@@ -333,8 +332,28 @@ layers both onto `php:8.4-fpm-alpine` with nginx serving the SPA and proxying
 `/api/*` to php-fpm on one port — the same single-origin shape described in
 [§4](#4-architecture), just without the local dev server in front of it.
 
-To build and run that production image locally, against a real Postgres
-instance, before pushing it anywhere:
+### Migrations are a release step, not a boot step
+
+The production entrypoint starts php-fpm and nginx and nothing else. It
+deliberately does **not** migrate on boot: with more than one container that
+would race, and a failed migration would leave a half-started container
+serving traffic instead of failing the release.
+
+Instead the entrypoint runs any command passed to it in place of serving, so
+the release process runs migrations with the image it is about to deploy:
+
+```bash
+docker run --rm --env-file <env> <image> php artisan migrate --force
+```
+
+Wire that into whatever runs the deployment, as a step that must succeed
+before traffic moves to the new container. Skipping it is the one failure mode
+that gives no error at deploy time — the container starts, serves the SPA, and
+fails on the first request that touches a missing relation.
+
+### Running the production image locally
+
+To build and run it against a real Postgres instance before deploying:
 
 ```bash
 export APP_KEY=$(php -r "echo 'base64:'.base64_encode(random_bytes(32));")
@@ -343,9 +362,12 @@ docker compose -f docker-compose.prod.yml run --rm app php artisan migrate --for
 curl -f http://localhost:8080/api/v1/health
 ```
 
-Deploying elsewhere needs, at minimum: `APP_KEY`, `APP_URL`, and the five
-`DB_*` variables pointed at a PostgreSQL 18 instance. Everything else in
-`api/.env.example` has a workable default.
+### What a host needs
+
+At minimum: `APP_KEY`, `APP_URL`, and a PostgreSQL 18 instance — reachable
+either through the five `DB_*` variables or through a single `DB_URL`
+connection string. `/api/v1/health` is the health check endpoint. Everything
+else in `api/.env.example` has a workable default.
 
 ## 13. Resolved ambiguities
 
